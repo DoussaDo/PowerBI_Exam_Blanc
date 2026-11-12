@@ -381,7 +381,7 @@ const serie02 = [
   "num": 19,
   "title": "Dans ce visuel, j'ai mis en forme les pays de mon secteur (France et Pologne) en vert (code couleur #1f7f0b) et les autres pays en bleu (code couleur #3000fc). Pour cela, j'ai appliqué la mesure « DAX MFC » en mise en forme conditionnelle. Complétez la mesure pour qu'elle fonctionne.",
   "options": [
-    "SELECTEDVALUE(Clients[Pays]) IN {\"FRANCE\", \"POLOGNE\"}",
+    "SELECTEDVALUE(Clients[Pays]) IN {FRANCE, POLOGNE}",
     "SELECTEDVALUE(Clients[Pays]) = \"FRANCE\" AND \"POLOGNE\"",
     "SUM(Clients[Pays])",
     "ALL(Clients[Pays])",
