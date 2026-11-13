@@ -6,6 +6,20 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Power BI Drill · 25 questions</title>
     <link rel="stylesheet" href="style.css">
+<style>
+
+/* Champs à compléter dans les questions 9, 10, 14, 18 et 22 */
+.fill-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid #e4e7ef; }
+.fill-input, .fill-select { font:inherit; padding:9px 12px; border:1px solid #b9c5d8; border-radius:7px; background:white; color:#1b2a40; }
+.fill-row .fill-input { width: min(260px, 45%); min-width:80px; }
+.fill-sentence { line-height:3; padding:12px 0; }
+.fill-select { margin:0 7px; max-width:100%; }
+.fill-formula { font: 14px/1.9 Consolas,monospace; white-space:pre-wrap; overflow-wrap:anywhere; padding:16px; border-radius:8px; background:#f2f5fa; color:#18253a; }
+.fill-formula .fill-input { width:155px; max-width:90%; font:inherit; }
+.fill-input:disabled, .fill-select:disabled { opacity:.8; background:#e9edf4; }
+@media(max-width:600px) { .fill-row { align-items:flex-start; flex-direction:column; } .fill-row .fill-input { width:100%; } }
+
+</style>
 </head>
 
 <body>
@@ -13,7 +27,7 @@
     <b class="home-link" onclick="view('intro')">
         <span class="logo">▥</span>Power BI Drill
     </b>
-    <span class="muted small">Questions Power BI</span>
+    <span class="muted small">Préparation TOSA</span>
 </header>
     <main>
         <section class="panel" id="intro">

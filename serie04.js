@@ -153,7 +153,7 @@ const serie04 = [
    {
   num: 9,
   title: "Reliez les pictogrammes de Power BI à leur rôle.",
-  type: "text",
+  type: "matching_text",
   options: [
     "Une mesure",
     "Une hiérarchie",
@@ -412,16 +412,11 @@ RETURN
   {
     "num": 22,
     "title": "Complétez l'expression pour calculer NB ABSENCES pour le service PRODUCTION : NB ABSENCES PRODUCTION = XXXXX([NB ABSENCES], COLLABORATEURS[SERVICE] = \"PRODUCTION\")",
-    "options": [
-      "COUNT",
-      "CALCULATE",
-      "COUNTROWS",
-      "SUM",
-      "DISTINCTCOUNT"
-    ],
-    "answer": 1,
+    "options": [],
+    "formula": "NB ABSENCES PRODUCTION = _____([NB ABSENCES], COLLABORATEURS[SERVICE] = \"PRODUCTION\")",
+    "answer": "CALCULATE",
     "explanation": "CALCULATE([NB ABSENCES], COLLABORATEURS[SERVICE] = \"PRODUCTION\") évalue la mesure sous le filtre du service Production.",
-    "type": "single",
+    "type": "text",
     "image": "images/serie04/Q22.png",
     "full": "images/serie04/Q22.png",
     "verified": true
@@ -464,7 +459,7 @@ RETURN
     "type": "single",
     "image": "images/serie04/Q24.png",
     "full": "images/serie04/Q24.png",
-    "verified": false
+    "verified": true
   },
   {
     "num": 25,

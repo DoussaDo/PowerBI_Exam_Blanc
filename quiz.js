@@ -82,6 +82,22 @@ function normalizeText(value) {
     .toLowerCase();
 }
 
+// Ignore la casse et les espaces dans les expressions DAX.
+function normalizeDax(value) {
+  return String(value ?? '').replace(/\s+/g, '').toUpperCase();
+}
+
+function makeTextInput(id, value = '', disabled = false) {
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.id = id;
+  input.className = 'fill-input';
+  input.autocomplete = 'off';
+  input.value = value;
+  input.disabled = disabled;
+  return input;
+}
+
 function createOptionContent(option) {
   const container = document.createElement('span');
   container.className = 'option-content';
@@ -320,25 +336,74 @@ function render() {
   // RÉPONSE LIBRE
   // ========================================
 
-  if (q.type === 'text') {
-    const input = document.createElement('textarea');
-
-    input.id = 'text-answer';
-    input.placeholder = 'Saisis ta réponse ici...';
-    input.rows = 4;
-    input.style.width = '100%';
-    input.style.boxSizing = 'border-box';
-    input.style.padding = '12px';
-    input.style.borderRadius = '8px';
-    input.style.font = 'inherit';
-
-    if (state) {
-      input.value = state.response;
-      input.disabled = true;
+  if (q.type === 'matching_text') {
+    const intro = document.createElement('p');
+    intro.textContent = 'Saisis la lettre du pictogramme correspondant à chaque rôle (A à E).';
+    $('opts').append(intro);
+    q.options.forEach((role, i) => {
+      const line = document.createElement('label');
+      line.className = 'fill-row';
+      const text = document.createElement('span');
+      text.textContent = role;
+      const input = makeTextInput(`match-${i}`, state?.response?.[i] ?? '', !!state);
+      input.maxLength = 1;
+      input.placeholder = 'A–E';
+      input.setAttribute('aria-label', role);
+      line.append(text, input);
+      $('opts').append(line);
+    });
+  } else if (q.type === 'dropdown') {
+    const sentence = document.createElement('div');
+    sentence.className = 'fill-sentence';
+    const parts = q.text.split(/\{(\d+)\}/g);
+    parts.forEach((part, i) => {
+      if (i % 2 === 0) {
+        sentence.append(document.createTextNode(part));
+      } else {
+        const n = Number(part);
+        const select = document.createElement('select');
+        select.id = `dropdown-${n}`;
+        select.className = 'fill-select';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Choisir…';
+        select.append(placeholder);
+        q.dropdowns[n].forEach(choice => {
+          const option = document.createElement('option');
+          option.value = choice;
+          option.textContent = choice;
+          select.append(option);
+        });
+        select.value = state?.response?.[n] ?? '';
+        select.disabled = !!state;
+        sentence.append(select);
+      }
+    });
+    $('opts').append(sentence);
+  } else if (q.type === 'text') {
+    if (q.formula) {
+      const formula = document.createElement('pre');
+      formula.className = 'fill-formula';
+      const segments = q.formula.split('_____');
+      formula.append(document.createTextNode(segments[0]));
+      const input = makeTextInput('text-answer', state?.response ?? '', !!state);
+      input.placeholder = 'Fonction DAX';
+      input.setAttribute('aria-label', 'Fonction DAX manquante');
+      formula.append(input, document.createTextNode(segments.slice(1).join('_____')));
+      $('opts').append(formula);
+    } else {
+      const line = document.createElement('label');
+      line.className = 'fill-row';
+      if (q.prefix) {
+        const prefix = document.createElement('strong');
+        prefix.textContent = q.prefix;
+        line.append(prefix);
+      }
+      const input = makeTextInput('text-answer', state?.response ?? '', !!state);
+      input.placeholder = 'Saisis ta formule DAX';
+      line.append(input);
+      $('opts').append(line);
     }
-
-    $('opts').append(input);
-
   } else {
     q.options.forEach((option, i) => {
 
@@ -438,6 +503,14 @@ function getExpectedAnswer(q) {
     return q.answer.map(
       i => optionText(q.options[i])
     ).join(' ; ');
+  }
+
+  if (q.type === 'matching_text') {
+    return q.options.map((role, i) => `${role} : ${q.answer[i]}`).join(' · ');
+  }
+
+  if (q.type === 'dropdown') {
+    return q.answer.join(' / ');
   }
 
   if (q.type === 'text') {
@@ -544,6 +617,22 @@ function validate() {
       response.length === q.answer.length &&
       response.every(i => q.answer.includes(i));
 
+  } else if (q.type === 'matching_text') {
+    response = q.options.map((_, i) => $(`match-${i}`).value.trim().toUpperCase());
+    if (response.some(v => !/^[A-E]$/.test(v))) {
+      alert('Saisis une lettre de A à E pour chaque pictogramme.');
+      return;
+    }
+    ok = response.every((v, i) => v === q.answer[i]);
+
+  } else if (q.type === 'dropdown') {
+    response = q.dropdowns.map((_, i) => $(`dropdown-${i}`).value);
+    if (response.some(v => !v)) {
+      alert('Complète les trois menus déroulants.');
+      return;
+    }
+    ok = response.every((v, i) => v === q.answer[i]);
+
   } else if (q.type === 'text') {
     response = $('text-answer').value.trim();
 
@@ -558,8 +647,8 @@ function validate() {
 
     ok = accepted.some(
       answer =>
-        normalizeText(response) ===
-        normalizeText(answer)
+        normalizeDax(response) ===
+        normalizeDax(answer)
     );
 
   } else {
