@@ -95,24 +95,33 @@ const serie01 = [
     "verified": true
   },
 
+ 
   // QUESTION 06
   {
-    "num": 6,
-    "title": "Complétez la mesure DAX « Evolution CA » avec une fonction de TIME INTELLIGENCE permettant de réaliser ce pourcentage d’évolution. Evolution CA = VAR _CA_MOIS_PRECEDENT = CALCULATE ( [CA], XXXXXXXXXXX( Calendrier[Date], -1, MONTH ) ) RETURN DIVIDE ( [CA] - _CA_MOIS_PRECEDENT, _CA_MOIS_PRECEDENT )",
-    "options": [
-      "DATEADD",
-      "DATESYTD",
-      "SAMEPERIODLASTYEAR",
-      "TOTALYTD",
-      "ALL"
-    ],
-    "answer": 0,
-    "explanation": "DATEADD(Calendrier[Date], -1, MONTH) récupère la période du mois précédent. On calcule ensuite ([CA] − CA du mois précédent) / CA du mois précédent. Par exemple, passer de 100 à 120 correspond à +20 %.",
-    "type": "single",
-    "image": "images/serie01/Q06.png",
-    "full": "images/serie01/Q06.png",
-    "verified": true
+    num: 6,
+    title: "Complétez la mesure DAX « Evolution CA » avec une fonction de TIME INTELLIGENCE permettant de réaliser ce pourcentage d’évolution.",
+    type: "text",
+    options: [],
+    formula: `Evolution CA =
+
+VAR _CA_MOIS_PRECEDENT =
+    CALCULATE(
+        [CA],
+        _____(Calendrier[Date], -1, MONTH)
+    )
+
+RETURN
+    DIVIDE(
+        [CA] - _CA_MOIS_PRECEDENT,
+        _CA_MOIS_PRECEDENT
+    )`,
+    answer: "DATEADD",
+    explanation: "DATEADD(Calendrier[Date], -1, MONTH) récupère la période du mois précédent. On calcule ensuite ([CA] − CA du mois précédent) / CA du mois précédent. Par exemple, passer de 100 à 120 correspond à +20 %.",
+    image: "images/serie01/Q06.png",
+    full: "images/serie01/Q06.png",
+    verified: true
   },
+
 
   // QUESTION 07
   {
@@ -178,21 +187,21 @@ const serie01 = [
 
   // QUESTION 10
   {
-    "num": 10,
-    "title": "Complétez la mesure DAX « TOTAL QUANTITE SANS FILTRE » pour que le ratio « RATIO TOTAL QUANTITE » puisse être calculé. La mesure « TOTAL QUANTITE SANS FILTRE » calcule le TOTAL et n’est pas impactée par le contexte de filtre.\n\nTOTAL QUANTITE SANS FILTRE = XXXXXXX ([CA], XXXXXX (VENTES))",
-    "options": [
-      "CALCULATE et ALL",
-      "SUM et ALL",
-      "CALCULATE et FILTER",
-      "DIVIDE et ALL"
+    num: 10,
+    title: "Complétez la mesure DAX « TOTAL QUANTITE SANS FILTRE » pour que le ratio « RATIO TOTAL QUANTITE » puisse être calculé. La mesure calcule le TOTAL sans être impactée par le contexte de filtre.",
+    type: "dropdown",
+    text: "TOTAL QUANTITE SANS FILTRE = {0}([CA], {1}(VENTES))",
+    dropdowns: [
+      ["CALCULATE", "SUM", "DIVIDE", "COUNT"],
+      ["ALL", "FILTER", "VALUES", "DISTINCT"]
     ],
-    "answer": 0,
-    "explanation": "La formule attendue est CALCULATE([CA], ALL(VENTES)). CALCULATE réévalue [CA] dans un contexte de filtre modifié ; ALL(VENTES) retire les filtres de VENTES. Le dénominateur reste ainsi global pour calculer la part de chaque pays. Attention : l’intitulé parle de quantité, mais la formule fournie utilise bien [CA].",
-    "type": "single",
-    "image": "images/serie01/Q10.png",
-    "full": "images/serie01/Q10.png",
-    "verified": true
+    answer: ["CALCULATE", "ALL"],
+    explanation: "La formule attendue est CALCULATE([CA], ALL(VENTES)). CALCULATE réévalue [CA] dans un contexte de filtre modifié ; ALL(VENTES) retire les filtres de VENTES. Le dénominateur reste ainsi global pour calculer la part de chaque pays. Attention : l’intitulé parle de quantité, mais la formule fournie utilise bien [CA].",
+    image: "images/serie01/Q10.png",
+    full: "images/serie01/Q10.png",
+    verified: true
   },
+
 
   // QUESTION 11
   {
@@ -288,24 +297,19 @@ const serie01 = [
     "verified": true
   },
 
-  // QUESTION 15
-  {
-    "num": 15,
-    "title": "Quelle fonction DAX applique les valeurs de OBJAgences[Agences] comme filtres sur Vendeurs[Agences] ?",
-    "options": [
-      "TREATAS",
-      "RELATED",
-      "USERELATIONSHIP",
-      "VALUES",
-      "LOOKUPVALUE"
-    ],
-    "answer": 0,
-    "explanation": "TREATAS transfère les valeurs d’une colonne vers une autre colonne comme filtre, même lorsqu’il n’existe pas de relation physique entre les tables.",
-    "type": "single",
-    "image": "images/serie01/Q15.png",
-    "full": "images/serie01/Q15.png",
-    "verified": true
-  },
+// QUESTION 15
+{
+  num: 15,
+  title: "Saisissez le nom de la fonction utilisée dans la mesure DAX RATIO OBJECTIF AGENCE qui applique les valeurs de OBJAgences[Agences] comme filtres sur Vendeurs[Agences].",
+  type: "text",
+  prefix: "Fonction DAX :",
+  options: [],
+  answer: "TREATAS",
+  explanation: "TREATAS applique les valeurs d'une colonne comme filtres sur une autre colonne, même sans relation physique entre les tables.",
+  image: "images/serie01/Q15.png",
+  full: "images/serie01/Q15.png",
+  verified: true
+},
 
   // QUESTION 16
   {
@@ -444,23 +448,21 @@ const serie01 = [
     "verified": true
   },
 
+
   // QUESTION 22
   {
-    "num": 22,
-    "title": "La mesure « CA » calcule le chiffre d’affaires. Dans cette capture, il s’affiche pour chaque mois de l’année 2019. Complétez la mesure DAX « CUMUL ANNUEL » avec une fonction de TIME INTELLIGENCE permettant le cumul annuel de la mesure « CA » mois après mois.\n\nCUMUL ANNUEL = XXXXXXX ([CA],Calendrier[Date])",
-    "options": [
-      "TOTALYTD",
-      "DATEADD",
-      "SAMEPERIODLASTYEAR",
-      "DATESINPERIOD"
-    ],
-    "answer": 0,
-    "explanation": "TOTALYTD([CA], Calendrier[Date]) calcule le chiffre d’affaires cumulé depuis le début de l’année jusqu’à la date courante. Le cumul repart de zéro à chaque nouvelle année.",
-    "type": "single",
-    "image": "images/serie01/Q22.png",
-    "full": "images/serie01/Q22.png",
-    "verified": true
+    num: 22,
+    title: "La mesure « CA » calcule le chiffre d’affaires. Dans cette capture, il s’affiche pour chaque mois de l’année 2019. Complétez la mesure DAX « CUMUL ANNUEL » avec une fonction de TIME INTELLIGENCE permettant le cumul annuel de la mesure « CA » mois après mois.",
+    type: "text",
+    formula: "CUMUL ANNUEL = _____([CA], Calendrier[Date])",
+    options: [],
+    answer: "TOTALYTD",
+    explanation: "TOTALYTD([CA], Calendrier[Date]) calcule le chiffre d’affaires cumulé depuis le début de l’année jusqu’à la date courante. Le cumul repart de zéro à chaque nouvelle année.",
+    image: "images/serie01/Q22.png",
+    full: "images/serie01/Q22.png",
+    verified: true
   },
+
 
   // QUESTION 23
   {

@@ -92,24 +92,24 @@ const serie02 = [
     "full": "images/serie02/Q05.png",
     "verified": true
   },
-  // QUESTION 06
-  {
-    "num": 6,
-    "title": "Complétez la mesure DAX « TOTAL QUANTITE SANS FILTRE » pour que le ratio « RATIO TOTAL QUANTITE » puisse être calculé. TOTAL QUANTITE SANS FILTRE = XXXXXXX([CA], XXXXXX(VENTES))",
-    "options": [
-      "CALCULATE et ALL",
-      "SUM et FILTER",
-      "CALCULATE et REMOVEFILTERS",
-      "DIVIDE et ALL",
-      "TOTALYTD et FILTER"
-    ],
-    "answer": 0,
-    "explanation": "La correction attendue dans cet exercice est CALCULATE([CA], ALL(VENTES)). ALL(VENTES) supprime le contexte de filtre appliqué à cette table. L’énoncé du document utilise [CA] malgré le nom de mesure relatif aux quantités.",
-    "type": "single",
-    "image": "images/serie02/Q06.png",
-    "full": "images/serie02/Q06.png",
-    "verified": true
-  },
+
+// QUESTION 06
+{
+  num: 6,
+  title: "Complétez la mesure DAX « TOTAL QUANTITE SANS FILTRE » pour que le ratio « RATIO TOTAL QUANTITE » puisse être calculé.",
+  type: "dropdown",
+  text: "TOTAL QUANTITE SANS FILTRE = {0}([CA], {1}(VENTES))",
+  dropdowns: [
+    ["CALCULATE", "SUM", "DIVIDE", "TOTALYTD"],
+    ["ALL", "FILTER", "REMOVEFILTERS"]
+  ],
+  answer: ["CALCULATE", "ALL"],
+  explanation: "La correction attendue dans cet exercice est CALCULATE([CA], ALL(VENTES)). ALL(VENTES) supprime le contexte de filtre appliqué à cette table. L’énoncé du document utilise [CA] malgré le nom de mesure relatif aux quantités.",
+  image: "images/serie02/Q06.png",
+  full: "images/serie02/Q06.png",
+  verified: true
+},
+
   // QUESTION 07
   {
     "num": 7,
@@ -152,30 +152,28 @@ const serie02 = [
     "full": "images/serie02/Q08.png",
     "verified": true
   },
+  
+
   // QUESTION 09
   {
-    "num": 9,
-    "title": "Associez chaque description au volet Power BI Desktop correspondant. Indiquez Vrai ou Faux pour chaque association.",
-    "options": [
-      "Zone des filtres → Volet filtres",
-      "Liste des tables et champs → Volet données",
-      "Liste des segments synchronisés → Volet segments",
-      "Réglages d’apparence du visuel → Volet format",
-      "Ordre des objets et visibilité → Volet sélection"
+    num: 9,
+    title: "Observez les cinq volets Power BI Desktop identifiés par les lettres A, B, C, D et E. Associez chaque description au volet correspondant.",
+    type: "dropdown",
+    text: "Gérer l'ordre et la visibilité des objets : {0}\nSynchroniser les segments entre plusieurs pages : {1}\nFiltrer les données d'un visuel : {2}\nModifier l'apparence d'un visuel : {3}\nAfficher les tables et les champs du modèle : {4}",
+    dropdowns: [
+      ["A", "B", "C", "D", "E"],
+      ["A", "B", "C", "D", "E"],
+      ["A", "B", "C", "D", "E"],
+      ["A", "B", "C", "D", "E"],
+      ["A", "B", "C", "D", "E"]
     ],
-    "answer": [
-      true,
-      true,
-      true,
-      true,
-      true
-    ],
-    "explanation": "Les cinq correspondances décrivent les volets de l’interface. L’exercice d’origine est un glisser-déposer, adapté ici en vrai/faux.",
-    "type": "tf",
-    "image": "images/serie02/Q09.png",
-    "full": "images/serie02/Q09.png",
-    "verified": true
+    answer: ["E", "C", "A", "D", "B"],
+    explanation: "A = Volet filtres. B = Volet données. C = Synchronisation des segments. D = Volet format. E = Volet sélection.",
+    image: "images/serie02/Q09.png",
+    full: "images/serie02/Q09.png",
+    verified: true
   },
+
   // QUESTION 10
   {
     "num": 10,
@@ -270,44 +268,43 @@ const serie02 = [
   // QUESTION 14
   {
     "num": 14,
-    "title": "Observez les cinq pictogrammes Power BI de la capture, numérotés de 1 à 5 de haut en bas. Indiquez si les associations suivantes sont vraies ou fausses.",
-    "options": [
-      "Pictogramme 1 → Une colonne calculée",
-      "Pictogramme 2 → Une mesure",
-      "Pictogramme 3 → Une hiérarchie",
-      "Pictogramme 4 → Une colonne numérique avec agrégation",
-      "Pictogramme 5 → Une colonne de dates"
-    ],
-    "answer": [
-      true,
-      true,
-      false,
-      true,
-      false
-    ],
-    "explanation": "Les associations correctes, de haut en bas, sont : 1. Colonne calculée ; 2. Mesure ; 3. Colonne de dates ; 4. Colonne numérique avec agrégation (Σ) ; 5. Hiérarchie. Les affirmations 3 et 5 sont donc fausses.",
-    "type": "tf",
-    "image": "images/serie02/Q14.png",
-    "full": "images/serie02/Q14.png",
-    "verified": true
+   title: "Reliez les pictogrammes de Power BI à leur rôle.",
+  type: "matching_text",
+  options: [
+    "Une mesure",
+    "Une hiérarchie",
+    "Une colonne calculée",
+    "Une colonne de dates d'une table de dates",
+    "Une colonne avec un résumé d'agrégation"
+  ],
+  answer: ["B", "E", "A", "C", "D"],
+  image: "images/serie04/Q14.png",
+  full: "images/serie04/Q14.png",
+  verified: true
   },
+
   // QUESTION 15
   {
     "num": 15,
-    "title": "Complétez la mesure DAX « Evolution CA » avec une fonction de TIME INTELLIGENCE permettant de réaliser ce pourcentage d’évolution. CALCULATE([CA], XXXXXXX(Calendrier[Date], -1, MONTH))",
-    "options": [
-      "DATEADD",
-      "TOTALYTD",
-      "DATESYTD",
-      "SAMEPERIODLASTYEAR",
-      "PARALLELPERIOD"
-    ],
-    "answer": 0,
-    "explanation": "DATEADD(Calendrier[Date], -1, MONTH) décale le contexte de dates d’un mois pour récupérer le CA du mois précédent. Le taux d’évolution compare ensuite le CA actuel à ce CA précédent.",
-    "type": "single",
-    "image": "images/serie02/Q15.png",
-    "full": "images/serie02/Q15.png",
-    "verified": true
+     title: "Complétez la mesure DAX « Evolution CA » avec une fonction de TIME INTELLIGENCE permettant de réaliser ce pourcentage d’évolution.",
+    type: "text",
+    options: [],
+    formula: `Evolution CA =
+VAR _CA_MOIS_PRECEDENT =
+    CALCULATE(
+        [CA],
+        _____(Calendrier[Date], -1, MONTH)
+    )
+RETURN
+    DIVIDE(
+        [CA] - _CA_MOIS_PRECEDENT,
+        _CA_MOIS_PRECEDENT
+    )`,
+    answer: "DATEADD",
+    explanation: "DATEADD(Calendrier[Date], -1, MONTH) récupère la période du mois précédent. On calcule ensuite ([CA] − CA du mois précédent) / CA du mois précédent. Par exemple, passer de 100 à 120 correspond à +20 %.",
+    image: "images/serie02/Q15.png",
+    full: "images/serie02/Q15.png",
+    verified: true
   },
   // QUESTION 16
   {
@@ -376,24 +373,30 @@ const serie02 = [
     "verified": true
   },
  
-// QUESTION 19
-{
-  "num": 19,
-  "title": "Dans ce visuel, j'ai mis en forme les pays de mon secteur (France et Pologne) en vert (code couleur #1f7f0b) et les autres pays en bleu (code couleur #3000fc). Pour cela, j'ai appliqué la mesure « DAX MFC » en mise en forme conditionnelle. Complétez la mesure pour qu'elle fonctionne.",
-  "options": [
-    "SELECTEDVALUE(Clients[Pays]) IN {FRANCE, POLOGNE}",
-    "SELECTEDVALUE(Clients[Pays]) = \"FRANCE\" AND \"POLOGNE\"",
-    "SUM(Clients[Pays])",
-    "ALL(Clients[Pays])",
-    "ISBLANK(Clients[Pays])"
-  ],
-  "answer": 0,
-  "explanation": "L’opérateur DAX IN teste si une valeur figure dans une liste. Il peut être utilisé dans IF pour renvoyer une couleur différente selon le pays.",
-  "type": "single",
-  "image": "images/serie02/Q19.png",
-  "full": "images/serie02/Q19.png",
-  "verified": true
-},
+
+  // QUESTION 19
+  {
+    num: 19,
+    title: "Dans ce visuel, j'ai mis en forme les pays de mon secteur (France et Pologne) en vert (code couleur #1f7f0b) et les autres pays en bleu (code couleur #3000fc). Pour cela, j'ai appliqué la mesure « DAX MFC » en mise en forme conditionnelle. Complétez la mesure pour qu'elle fonctionne.",
+    type: "dropdown",
+    text: "DAX MFC =\nIF(\n SELECTEDVALUE(Clients[Pays]) IN { {0}, {1} },\n {2}, // vert\n {3} // bleu\n)",
+    dropdowns: [
+      ['"FRANCE"', 'France', 'Belgique', '"Italie"'],
+      ['"Pologne"', 'Belgique', 'Pologne', 'Italie'],
+      ['"#3000fc"', '#1f7f0b', '"#1f7f0b"', '#ff0000'],
+      ['"#1f7f0b"', '#3000fc', '"#3000fc"', '#ffff00']
+    ],
+    answer: [
+      "France",
+      "Pologne",
+      "#1f7f0b",
+      "#3000fc"
+    ],
+    explanation: "SELECTEDVALUE(Clients[Pays]) récupère le pays dans le contexte courant. L'opérateur IN vérifie si ce pays est France ou Pologne. IF renvoie alors le code couleur vert (#1f7f0b), sinon le code bleu (#3000fc). Dans cet exercice, les valeurs affichées dans les menus sont sans guillemets, conformément à la correction TOSA. Dans une formule DAX écrite directement, les chaînes de caractères doivent être entourées de guillemets doubles.",
+    image: "images/serie02/Q19.png",
+    full: "images/serie02/Q19.png",
+    verified: true
+  },
 
   // QUESTION 20
   {
