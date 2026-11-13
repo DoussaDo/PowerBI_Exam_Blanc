@@ -336,8 +336,7 @@ RETURN
   prefix: "TOTAL =",
   options: [],
   answer: [
-    "SUM(VENTES[QT])",
-    "SUM ( VENTES[QT] )"
+    "SUM(VENTES[QT])"
   ],
   explanation: "La fonction SUM additionne les valeurs de la colonne QT de la table VENTES.",
   image: "images/serie04/Q18.png",

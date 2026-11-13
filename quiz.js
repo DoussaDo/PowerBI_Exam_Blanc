@@ -11,7 +11,8 @@ const series = {
   1: serie01,
   2: serie02,
   3: serie03,
-  4: serie04
+  4: serie04,
+  5: serie05
 };
 
 let serieActive = 1;
