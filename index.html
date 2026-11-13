@@ -9,37 +9,95 @@
 </head>
 
 <body>
-    <header><b><span class="logo">▥</span>Power BI Drill</b><span class="muted small">Questions Power BI</span></header>
+  <header>
+    <b class="home-link" onclick="view('intro')">
+        <span class="logo">▥</span>Power BI Drill
+    </b>
+    <span class="muted small">Questions Power BI</span>
+</header>
     <main>
         <section class="panel" id="intro">
             <h1>Entraînement Power BI</h1>
-            <p>Questions avec résolution intégrées, correction et entraînement aléatoire.</p>
+            <p>Questions avec correction et entraînement aléatoire.</p>
             <div class="warning">Bonne chance.</div>
            <div class="actions">
-            <button onclick="choisirSerie(1)">Série 1</button>
-            <button onclick="choisirSerie(2)">Série 2</button>
-            <button onclick="choisirSerie(3)">Série 3</button>
+            <button onclick="choisirSerie(1)">Série 1 - Avancé</button>
+            <button onclick="choisirSerie(2)">Série 2 - Avancé</button>
+            <button onclick="choisirSerie(3)">Série 3 - Avancé</button>
             <button onclick="start('random')">🔀 Mélanger les séries</button>
             </div>
            
         </section>
-        <section class="panel hidden" id="quiz">
-            <div class="top"><b id="counter"></b><span id="score" class="muted"></span></div>
-            <div class="progress">
-                <div class="bar" id="bar"></div>
-            </div>
-            <h1 id="title"></h1>
-            <div class="visual"><img id="image" onclick="zoom()" alt="Capture agrandie de la question">
-                <p class="muted small">Cliquer sur l’image pour l’agrandir en plein écran (Échap pour fermer).</p>
-            </div>
-            <div id="pending" class="warning hidden">Corrigé non confirmé : cette question ne compte pas dans le score.
-            </div>
-            <div id="opts"></div>
-            <div id="feedback" class="feedback hidden"></div>
-            <div class="actions"><button id="check" onclick="validate()">Vérifier ma réponse</button><button id="next"
-                    class="hidden" onclick="next()">Question suivante →</button><button class="alt"
-                    onclick="view('intro')">Quitter</button></div>
-        </section>
+        
+<section class="quiz-layout hidden" id="quiz">
+
+    <!-- Colonne principale : question -->
+    <div class="panel quiz-main">
+
+        <div class="top">
+            <b id="counter"></b>
+            <span id="score" class="muted"></span>
+        </div>
+
+        <div class="progress">
+            <div class="bar" id="bar"></div>
+        </div>
+
+        <h1 id="title"></h1>
+
+        <div class="visual">
+            <img id="image" onclick="zoom()"
+                 alt="Capture agrandie de la question">
+            <p class="muted small">
+                Cliquer sur l’image pour l’agrandir
+                en plein écran (Échap pour fermer).
+            </p>
+        </div>
+
+        <div id="pending" class="warning hidden">
+            Corrigé non confirmé : cette question
+            ne compte pas dans le score.
+        </div>
+
+        <div id="opts"></div>
+
+        <div id="feedback" class="feedback hidden"></div>
+
+        <div class="actions">
+            <button id="check" onclick="validate()">
+                Vérifier ma réponse
+            </button>
+
+            <button id="next" class="hidden" onclick="next()">
+                Question suivante →
+            </button>
+
+            <button class="alt" onclick="view('intro')">
+                Quitter
+            </button>
+        </div>
+
+    </div>
+<aside class="panel quiz-sidebar">
+    <button id="toggle-nav" type="button" onclick="toggleNavigation()">
+        Masquer la navigation ❯
+    </button>
+    <!-- Colonne de droite : navigation -->
+    <aside class="panel quiz-sidebar">
+
+        <h3>Navigation</h3>
+
+        <p class="muted small">
+            Accéder directement à une question
+        </p>
+
+        <div id="question-nav"></div>
+
+
+    </aside>
+
+</section>
+
         <section class="panel hidden" id="result">
             <h1 id="resultTitle"></h1>
             <p id="resultText"></p>
@@ -53,6 +111,9 @@
     <script src="serie02.js"></script>
     <script src="serie03.js"></script>
     <script src="quiz.js"></script> 
+    <script>
+
+</script>
 </body>
 
 </html>

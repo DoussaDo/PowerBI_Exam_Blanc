@@ -1,5 +1,7 @@
 
-// Fonctionnement du quiz
+// ========================================
+// FONCTIONNEMENT DU QUIZ POWER BI
+// ========================================
 
 // ========================================
 // GESTION DES SÉRIES
@@ -14,6 +16,11 @@ const series = {
 let serieActive = 1;
 
 function choisirSerie(numero) {
+  if (!series[numero]) {
+    alert("Cette série n'existe pas.");
+    return;
+  }
+
   serieActive = numero;
   start('all');
 }
@@ -28,6 +35,11 @@ let good = 0;
 let errors = [];
 let locked = false;
 
+// Une entrée par question.
+// null = non validée
+// { response, correct } = validée
+let answers = [];
+
 const $ = id => document.getElementById(id);
 
 // ========================================
@@ -41,35 +53,134 @@ function view(id) {
 }
 
 // ========================================
+// OUTILS
+// ========================================
+
+function optionText(option) {
+  if (typeof option === 'string') {
+    return option.replace(/\s*\|\s*/g, ' · ');
+  }
+
+  if (option && typeof option === 'object') {
+    return [
+      option.title,
+      option.text,
+      option.details
+    ].filter(Boolean).join(' · ');
+  }
+
+  return String(option ?? '');
+}
+
+function normalizeText(value) {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
+function createOptionContent(option) {
+  const container = document.createElement('span');
+  container.className = 'option-content';
+  container.style.display = 'block';
+  container.style.minWidth = '0';
+
+  if (typeof option === 'string') {
+    const parts = option.split(/\s+\|\s+/);
+
+    if (parts.length > 1) {
+      const heading = document.createElement('strong');
+      heading.textContent = parts[0];
+      heading.style.display = 'block';
+      container.append(heading);
+
+      parts.slice(1).forEach(part => {
+        const line = document.createElement('span');
+        line.textContent = part;
+        line.style.display = 'block';
+        line.style.marginTop = '4px';
+        container.append(line);
+      });
+    } else {
+      container.textContent = option;
+    }
+
+    return container;
+  }
+
+  if (option && typeof option === 'object') {
+    if (option.title) {
+      const heading = document.createElement('strong');
+      heading.textContent = option.title;
+      heading.style.display = 'block';
+      container.append(heading);
+    }
+
+    if (option.text) {
+      const text = document.createElement('span');
+      text.textContent = option.text;
+      text.style.display = 'block';
+      text.style.marginTop = '4px';
+      container.append(text);
+    }
+
+    if (option.details) {
+      const details = document.createElement('span');
+      details.textContent = option.details;
+      details.style.display = 'block';
+      details.style.marginTop = '6px';
+      details.style.whiteSpace = 'pre-line';
+      container.append(details);
+    }
+
+    if (option.image) {
+      const image = document.createElement('img');
+      image.src = option.image;
+      image.alt = option.title || 'Illustration de la réponse';
+      image.style.display = 'block';
+      image.style.maxWidth = '100%';
+      image.style.maxHeight = '260px';
+      image.style.objectFit = 'contain';
+      image.style.marginTop = '10px';
+      image.style.borderRadius = '6px';
+      container.append(image);
+    }
+
+    return container;
+  }
+
+  container.textContent = String(option ?? '');
+  return container;
+}
+
+// ========================================
 // DÉMARRAGE DU QUIZ
 // ========================================
 
-function start(mode) {
+function start(mode = 'all') {
+  let questions = [];
 
   if (mode === 'errors') {
-
-    // Réviser les erreurs du dernier quiz
-    seq = errors.slice();
+    questions = errors.slice();
 
   } else if (mode === 'random') {
+    questions = Object.values(series).flat();
 
-    // Regrouper toutes les séries
-    seq = Object.values(series).flat();
-
-    // Mélanger les questions (Fisher-Yates)
-    for (let i = seq.length - 1; i > 0; i--) {
+    for (let i = questions.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [seq[i], seq[j]] = [seq[j], seq[i]];
+      [questions[i], questions[j]] = [
+        questions[j],
+        questions[i]
+      ];
     }
 
   } else {
-
-    // Lancer uniquement la série sélectionnée
-    seq = series[serieActive].slice();
-
+    questions = series[serieActive].slice();
   }
 
-  if (!seq.length) {
+  if (!questions.length) {
     alert(
       mode === 'errors'
         ? 'Aucune erreur enregistrée.'
@@ -78,12 +189,81 @@ function start(mode) {
     return;
   }
 
+  seq = questions;
   idx = 0;
   good = 0;
   errors = [];
+  locked = false;
+
+  // Réinitialiser l'historique
+  answers = Array(seq.length).fill(null);
 
   render();
   view('quiz');
+}
+
+// ========================================
+// NAVIGATION LATÉRALE
+// ========================================
+
+function renderNavigation() {
+  const nav = $('question-nav');
+
+  if (!nav) return;
+
+  nav.replaceChildren();
+
+  seq.forEach((q, i) => {
+    const button = document.createElement('button');
+    const state = answers[i];
+
+    button.type = 'button';
+    button.className = 'nav-question';
+
+    if (state) {
+      if (q.verified !== true) {
+        button.classList.add('unanswered');
+      } else {
+        button.classList.add(
+          state.correct ? 'correct' : 'incorrect'
+        );
+      }
+    } else {
+      button.classList.add('unanswered');
+    }
+
+    if (i === idx) {
+      button.classList.add('active');
+      button.setAttribute('aria-current', 'step');
+    }
+
+    let icon = '○';
+
+    if (state && q.verified === true) {
+      icon = state.correct ? '✓' : '✕';
+    } else if (state) {
+      icon = '•';
+    }
+
+    button.textContent = `${icon} Question ${i + 1}`;
+
+    button.onclick = () => goToQuestion(i);
+
+    nav.append(button);
+  });
+}
+
+function goToQuestion(index) {
+  if (index < 0 || index >= seq.length) return;
+
+  idx = index;
+  render();
+
+  // Revenir en haut de la question
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
 }
 
 // ========================================
@@ -91,89 +271,230 @@ function start(mode) {
 // ========================================
 
 function render() {
-
-  locked = false;
-
   const q = seq[idx];
+  const state = answers[idx];
+
+  locked = state !== null;
 
   $('counter').textContent =
-    `Question ${idx + 1}/${seq.length} · n°${q.num}`;
+    `Question ${idx + 1}/${seq.length}`;
 
   $('score').textContent = `${good} correcte(s)`;
 
-  $('bar').style.width = `${idx / seq.length * 100}%`;
+  // Progression basée sur les questions validées
+  const completed = answers.filter(a => a !== null).length;
+
+  $('bar').style.width =
+    `${completed / seq.length * 100}%`;
 
   $('title').textContent = q.title;
 
-  $('image').src = q.image;
-  $('fullimage').src = q.full;
+  if (q.image) {
+    $('image').src = q.image;
+    $('image').style.display = '';
+  } else {
+    $('image').removeAttribute('src');
+    $('image').style.display = 'none';
+  }
+
+  if (q.full || q.image) {
+    $('fullimage').src = q.full || q.image;
+  } else {
+    $('fullimage').removeAttribute('src');
+  }
 
   $('feedback').className = 'feedback hidden';
 
-  $('check').classList.remove('hidden');
-  $('next').classList.add('hidden');
+  $('check').classList.toggle('hidden', locked);
+  $('next').classList.toggle('hidden', !locked);
 
-  $('pending').classList.toggle('hidden', q.verified);
+  $('pending').classList.toggle(
+    'hidden',
+    q.verified === true
+  );
 
   $('opts').replaceChildren();
 
-  q.options.forEach((o, i) => {
+  // ========================================
+  // RÉPONSE LIBRE
+  // ========================================
 
-    if (q.type === 'tf') {
+  if (q.type === 'text') {
+    const input = document.createElement('textarea');
 
-      // Question Vrai / Faux
+    input.id = 'text-answer';
+    input.placeholder = 'Saisis ta réponse ici...';
+    input.rows = 4;
+    input.style.width = '100%';
+    input.style.boxSizing = 'border-box';
+    input.style.padding = '12px';
+    input.style.borderRadius = '8px';
+    input.style.font = 'inherit';
 
-      let row = document.createElement('div');
-      row.className = 'tf';
-
-      let t = document.createElement('span');
-      t.textContent = o;
-
-      row.append(t);
-
-      for (const val of ['true', 'false']) {
-
-        let l = document.createElement('label');
-        let inp = document.createElement('input');
-
-        inp.type = 'radio';
-        inp.name = 'tf' + i;
-        inp.value = val;
-
-        l.append(
-          inp,
-          document.createTextNode(
-            val === 'true' ? 'Vrai' : 'Faux'
-          )
-        );
-
-        row.append(l);
-      }
-
-      $('opts').append(row);
-
-    } else {
-
-      // Question à choix unique
-
-      let l = document.createElement('label');
-      let inp = document.createElement('input');
-      let span = document.createElement('span');
-
-      l.className = 'opt';
-
-      inp.type = 'radio';
-      inp.name = 'choice';
-      inp.value = i;
-
-      span.textContent = o;
-
-      l.append(inp, span);
-
-      $('opts').append(l);
+    if (state) {
+      input.value = state.response;
+      input.disabled = true;
     }
 
-  });
+    $('opts').append(input);
+
+  } else {
+    q.options.forEach((option, i) => {
+
+      if (q.type === 'tf') {
+        const row = document.createElement('div');
+        row.className = 'tf';
+
+        row.append(createOptionContent(option));
+
+        for (const val of ['true', 'false']) {
+          const label = document.createElement('label');
+          const input = document.createElement('input');
+
+          input.type = 'radio';
+          input.name = 'tf' + i;
+          input.value = val;
+
+          if (state) {
+            input.checked =
+              state.response[i] === (val === 'true');
+            input.disabled = true;
+          }
+
+          label.append(
+            input,
+            document.createTextNode(
+              val === 'true' ? 'Vrai' : 'Faux'
+            )
+          );
+
+          row.append(label);
+        }
+
+        $('opts').append(row);
+
+      } else {
+        const label = document.createElement('label');
+        const input = document.createElement('input');
+
+        label.className = 'opt';
+
+        input.type =
+          q.type === 'multiple'
+            ? 'checkbox'
+            : 'radio';
+
+        input.name =
+          q.type === 'multiple'
+            ? 'multiple'
+            : 'choice';
+
+        input.value = i;
+
+        if (state) {
+          input.checked =
+            q.type === 'multiple'
+              ? state.response.includes(i)
+              : state.response === i;
+
+          input.disabled = true;
+        }
+
+        label.append(
+          input,
+          createOptionContent(option)
+        );
+
+        $('opts').append(label);
+      }
+    });
+  }
+
+  if (state) {
+    showFeedback(q, state.correct);
+  }
+
+  $('next').textContent =
+    idx === seq.length - 1
+      ? 'Voir mon résultat'
+      : 'Question suivante →';
+
+  renderNavigation();
+}
+
+// ========================================
+// RÉPONSE ATTENDUE
+// ========================================
+
+function getExpectedAnswer(q) {
+  if (q.type === 'tf') {
+    return q.answer.map(
+      (v, i) => `${i + 1} : ${v ? 'Vrai' : 'Faux'}`
+    ).join(' · ');
+  }
+
+  if (q.type === 'multiple') {
+    return q.answer.map(
+      i => optionText(q.options[i])
+    ).join(' ; ');
+  }
+
+  if (q.type === 'text') {
+    return Array.isArray(q.answer)
+      ? q.answer.join(' / ')
+      : String(q.answer ?? '');
+  }
+
+  return optionText(q.options[q.answer]);
+}
+
+// ========================================
+// AFFICHAGE DU CORRIGÉ
+// ========================================
+
+function showFeedback(q, ok) {
+  const f = $('feedback');
+
+  f.className = 'feedback ' +
+    (
+      q.verified === true
+        ? (ok ? 'good' : 'bad')
+        : ''
+    );
+
+  f.replaceChildren();
+
+  const lead = document.createElement('strong');
+
+  lead.textContent =
+    q.verified !== true
+      ? 'Corrigé en attente de validation'
+      : ok
+        ? '✓ Bonne réponse !'
+        : '✕ Réponse incorrecte';
+
+  f.append(lead);
+
+  const detail = document.createElement('p');
+  detail.style.margin = '8px 0';
+  detail.style.whiteSpace = 'pre-line';
+
+  detail.textContent =
+    q.verified !== true
+      ? 'Cette réponse n’est pas comptabilisée dans le score.'
+      : ok
+        ? 'Tu as identifié la bonne réponse. Voici pourquoi :'
+        : 'Bonne réponse attendue : ' +
+          getExpectedAnswer(q) + '.';
+
+  f.append(detail);
+
+  const reason = document.createElement('p');
+  reason.style.margin = '8px 0 0';
+  reason.style.whiteSpace = 'pre-line';
+  reason.textContent = q.explanation || '';
+
+  f.append(reason);
 }
 
 // ========================================
@@ -181,18 +502,15 @@ function render() {
 // ========================================
 
 function validate() {
-
-  if (locked) return;
+  if (locked || answers[idx] !== null) return;
 
   const q = seq[idx];
 
   let ok = false;
+  let response;
 
   if (q.type === 'tf') {
-
-    // Vérifier toutes les affirmations Vrai / Faux
-
-    let vals = q.options.map((_, i) =>
+    const vals = q.options.map((_, i) =>
       document.querySelector(
         `input[name="tf${i}"]:checked`
       )?.value
@@ -203,31 +521,69 @@ function validate() {
       return;
     }
 
-    ok = q.verified && vals.every(
-      (v, i) => (v === 'true') === q.answer[i]
+    response = vals.map(v => v === 'true');
+
+    ok = response.every(
+      (v, i) => v === q.answer[i]
+    );
+
+  } else if (q.type === 'multiple') {
+    response = Array.from(
+      document.querySelectorAll(
+        'input[name="multiple"]:checked'
+      )
+    ).map(input => Number(input.value));
+
+    if (!response.length) {
+      alert('Sélectionne au moins une réponse.');
+      return;
+    }
+
+    ok =
+      response.length === q.answer.length &&
+      response.every(i => q.answer.includes(i));
+
+  } else if (q.type === 'text') {
+    response = $('text-answer').value.trim();
+
+    if (!response) {
+      alert('Saisis une réponse.');
+      return;
+    }
+
+    const accepted = Array.isArray(q.answer)
+      ? q.answer
+      : [q.answer];
+
+    ok = accepted.some(
+      answer =>
+        normalizeText(response) ===
+        normalizeText(answer)
     );
 
   } else {
-
-    // Vérifier une question à choix unique
-
-    const c = document.querySelector(
+    const choice = document.querySelector(
       'input[name="choice"]:checked'
     );
 
-    if (!c) {
+    if (!choice) {
       alert('Choisis une réponse.');
       return;
     }
 
-    ok = q.verified &&
-      Number(c.value) === q.answer;
+    response = Number(choice.value);
+    ok = response === q.answer;
   }
+
+  // Mémoriser une seule fois la validation
+  answers[idx] = {
+    response,
+    correct: ok
+  };
 
   locked = true;
 
-  // Mise à jour du score et des erreurs
-  if (q.verified) {
+  if (q.verified === true) {
     if (ok) {
       good++;
     } else {
@@ -235,60 +591,8 @@ function validate() {
     }
   }
 
-  // Affichage du corrigé
-  let f = $('feedback');
-
-  f.className = 'feedback ' +
-    (q.verified ? (ok ? 'good' : 'bad') : '');
-
-  let expected = q.type === 'tf'
-    ? q.answer?.map(
-        (v, i) => `${i + 1}: ${v ? 'Vrai' : 'Faux'}`
-      ).join(' · ')
-    : q.options[q.answer];
-
-  f.replaceChildren();
-
-  const lead = document.createElement('strong');
-
-  lead.textContent = !q.verified
-    ? 'Corrigé en attente de validation'
-    : ok
-      ? '✓ Bonne réponse !'
-      : '✕ Réponse incorrecte';
-
-  f.append(lead);
-
-  const detail = document.createElement('p');
-  detail.style.margin = '8px 0';
-
-  detail.textContent = !q.verified
-    ? 'Cette réponse n’est pas comptabilisée dans le score.'
-    : ok
-      ? 'Tu as identifié la bonne réponse. Voici pourquoi :'
-      : 'Bonne réponse attendue : ' + expected + '.';
-
-  f.append(detail);
-
-  const reason = document.createElement('p');
-  reason.style.margin = '8px 0 0';
-
-  reason.textContent = q.explanation;
-
-  f.append(reason);
-
-  // Bloquer les réponses après validation
-  document.querySelectorAll('#opts input').forEach(
-    x => x.disabled = true
-  );
-
-  $('check').classList.add('hidden');
-  $('next').classList.remove('hidden');
-
-  $('next').textContent =
-    idx === seq.length - 1
-      ? 'Voir mon résultat'
-      : 'Question suivante →';
+  // Réafficher avec la réponse verrouillée
+  render();
 }
 
 // ========================================
@@ -296,41 +600,70 @@ function validate() {
 // ========================================
 
 function next() {
-
-  idx++;
-
-  if (idx === seq.length) {
-
-    view('result');
-
-    let n = seq.filter(q => q.verified).length;
-
-    $('resultTitle').textContent =
-      `Résultat : ${good}/${n} questions corrigées`;
-
-    $('resultText').textContent =
-      `${seq.length - n} question(s) en attente de validation du corrigé. ` +
-      `${errors.length} erreur(s) à réviser.`;
-
+  if (idx === seq.length - 1) {
+    showResults();
   } else {
-
-    render();
-
+    goToQuestion(idx + 1);
   }
 }
 
-// ========================================
-// ZOOM SUR LES IMAGES
-// ========================================
+function showResults() {
+  const completed = answers.filter(
+    a => a !== null
+  ).length;
+
+  const n = seq.filter(
+    q => q.verified === true
+  ).length;
+
+  view('result');
+
+  $('resultTitle').textContent =
+    `Résultat : ${good}/${n} questions corrigées`;
+
+  $('resultText').textContent =
+    `${completed}/${seq.length} question(s) traitée(s). ` +
+    `${errors.length} erreur(s) à réviser.`;
+}
+
+
+ // ========================================
+ // ZOOM SUR LES IMAGES
+ // ========================================
 
 function zoom() {
-  $('zoom').showModal();
+    const dialog = $('zoom');
+
+    if (!$('fullimage').getAttribute('src')) return;
+
+    if (!dialog.open) {
+        dialog.showModal();
+    }
 }
 
 document.addEventListener('keydown', e => {
+    const dialog = $('zoom');
 
-  if (e.key === 'Escape' && $('zoom').open) {
-    $('zoom').close();
-  }
-
+    if (e.key === 'Escape' && dialog.open) {
+        dialog.close();
+    }
 });
+
+// ========================================
+// AFFICHER / MASQUER LA NAVIGATION
+// ========================================
+
+function toggleNavigation() {
+    const sidebar = document.querySelector('.quiz-sidebar');
+    const button = document.getElementById('toggle-nav');
+
+    const hidden = sidebar.classList.toggle('collapsed');
+
+    button.textContent = hidden
+        ? '❮ Afficher'
+        : 'Masquer ❯';
+
+    button.setAttribute('aria-expanded', String(!hidden));
+}
+
+

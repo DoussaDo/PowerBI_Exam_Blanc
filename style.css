@@ -94,10 +94,12 @@ p {
 .visual img {
     display: block;
     width: 100%;
-    max-height: 690px;
+    max-width: 500px;
+    height: 300px;
     object-fit: contain;
-    image-rendering: auto;
-    cursor: zoom-in
+    object-position: center;
+    margin: 0 auto;
+    cursor: zoom-in;
 }
 
 .visual p {
@@ -234,4 +236,158 @@ dialog::backdrop {
     .top {
         font-size: 13px
     }
+}
+/* ========================================
+   NAVIGATION LATÉRALE DES QUESTIONS
+   ======================================== */
+
+/* Deux colonnes : question + navigation */
+.quiz-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 240px;
+    gap: 20px;
+    align-items: start;
+}
+
+/* Colonne principale */
+.quiz-main {
+    min-width: 0;
+}
+
+/* Panneau de navigation à droite */
+.quiz-sidebar {
+    position: sticky;
+    top: 20px;
+    padding: 18px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+}
+
+.quiz-sidebar h3 {
+    font-size: 17px;
+    margin: 0 0 8px;
+}
+
+/* Liste verticale */
+#question-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-top: 16px;
+}
+
+/* Chaque question dans la liste */
+.nav-question {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+}
+
+.nav-question:hover {
+    background: #edf2f7;
+    border-color: #cbd5e1;
+}
+
+/* Question actuellement affichée */
+.nav-question.active {
+    border-color: #d4a900;
+    background: #fffbeb;
+    font-weight: 700;
+}
+
+/* Question réussie */
+.nav-question.correct {
+    background: #e9f8ee;
+    border-color: #a7dfb7;
+}
+
+/* Question incorrecte */
+.nav-question.incorrect {
+    background: #fff1e9;
+    border-color: #f1b9a0;
+}
+
+/* Question non traitée */
+.nav-question.unanswered {
+    color: #64748b;
+}
+
+/* Légende */
+.nav-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 20px;
+    padding-top: 14px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* Adaptation aux écrans plus petits */
+@media (max-width: 850px) {
+    .quiz-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .quiz-sidebar {
+        position: static;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+}
+/* Logo cliquable vers l'accueil */
+.home-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e293b;
+    cursor: pointer;
+}
+
+.home-link:hover {
+    opacity: 0.85;
+}
+/* Bouton afficher / masquer la navigation */
+#toggle-nav {
+    width: 100%;
+    background: #fff;
+    border: 1px solid #dce4ef;
+    font-size: 13px;
+    padding: 8px 12px;
+    margin-bottom: 15px;
+}
+
+
+.quiz-sidebar.collapsed {
+    width: 160px;
+    padding: 12px;
+}
+
+.quiz-sidebar.collapsed h3,
+.quiz-sidebar.collapsed p,
+.quiz-sidebar.collapsed #question-nav,
+.quiz-sidebar.collapsed .nav-legend {
+    display: none;
+}
+
+.quiz-layout:has(.quiz-sidebar.collapsed) {
+    grid-template-columns: minmax(0, 1fr) 160px;
+}
+
+header .home-link,
+header .home-link * {
+    cursor: pointer !important;
 }
