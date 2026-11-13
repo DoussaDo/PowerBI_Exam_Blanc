@@ -54,7 +54,7 @@ function shuffleQuestions(questions) {
 }
 function getExamPool() {
   return Object.entries(series).flatMap(([seriesId, questions]) =>
-    questions.map(q => ({...q, examKey: `${seriesId}:${q.num}`})));
+    questions.filter(q => q.verified === true).map(q => ({...q, examKey: `${seriesId}:${q.num}`})));
 }
 function startExam() {
   const pool = getExamPool();
@@ -91,7 +91,7 @@ function updateExamUI() {
   $('exam-clock').classList.toggle('hidden', !examMode);
   $('exam-submit').classList.toggle('hidden', !examMode);
   $('check').classList.toggle('hidden', examMode);
-  $('pending').classList.add('hidden');
+
   if (examMode) tickExam();
 }
 function readResponse(q, requireComplete = true) {
@@ -144,6 +144,14 @@ function saveCurrentExamAnswer() {
     (response === null || response === undefined ? null : {response,correct:null});
   persistExam();
 }
+function formatExamResponse(q, response) {
+  if (q.type === 'tf') return response.map((v,i)=>`${i+1} : ${v===true?'Vrai':v===false?'Faux':'Non répondu'}`).join(' · ');
+  if (q.type === 'multiple') return response.map(i=>optionText(q.options[i])).join(' ; ') || 'Aucune réponse';
+  if (q.type === 'matching_text') return q.options.map((role,i)=>`${role} : ${response[i]||'—'}`).join(' · ');
+  if (q.type === 'dropdown') return response.join(' / ');
+  if (q.type === 'text') return response || 'Aucune réponse';
+  return response === null ? 'Aucune réponse' : optionText(q.options[response]);
+}
 function finishExam(expired = false) {
   if (!examMode) return;
   if (!expired) {
@@ -155,29 +163,67 @@ function finishExam(expired = false) {
   try { localStorage.removeItem(EXAM_STORAGE_KEY); } catch(e) {}
   const total = seq.length;
   const attempted = answers.filter((a,i)=>a && isResponseComplete(seq[i],a.response)).length;
-  const verified = seq.filter(q=>q.verified===true).length;
-  const correct = answers.reduce((sum,a,i)=>sum+(a && seq[i].verified===true && checkResponse(seq[i],a.response)?1:0),0);
-  errors = seq.filter((q,i)=>q.verified===true && (!answers[i] || !checkResponse(q,answers[i].response)));
+  const verified = total;
+  const correct = answers.reduce((sum,a,i)=>sum+(a && checkResponse(seq[i],a.response)?1:0),0);
+  errors = seq.filter((q,i)=>!answers[i] || !checkResponse(q,answers[i].response));
   examMode = false;
   updateExamUI();
   view('result');
   $('resultTitle').textContent = expired ? 'Temps écoulé !' : 'Simulation terminée';
-  $('resultText').textContent = `Score : ${correct}/${verified} questions corrigées (${Math.round(correct/Math.max(1,verified)*100)} %). ${attempted}/${total} réponses complètes. ${total-verified} question(s) sans corrigé confirmé.`;
+  $('resultText').textContent = `Score : ${correct}/${total} (${Math.round(correct/total*100)} %). ${attempted}/${total} questions répondues.`;
   $('result-restart').textContent = 'Nouvelle simulation';
   $('result-restart').onclick = startExam;
   $('result-errors').classList.toggle('hidden',errors.length===0);
-  const review = $('exam-review'); review.classList.remove('hidden'); review.replaceChildren();
-  const heading=document.createElement('h3'); heading.textContent='Correction détaillée'; review.append(heading);
-  seq.forEach((q,i)=>{
-    const item=document.createElement('details'); item.className='exam-review-item';
-    const summary=document.createElement('summary');
-    const a=answers[i]; const complete=a && isResponseComplete(q,a.response);
-    const ok=complete && q.verified===true && checkResponse(q,a.response);
-    summary.textContent=`Question ${i+1} · Série ${q.examKey.split(':')[0]} · ${q.verified!==true?'Non corrigée':!complete?'Sans réponse':ok?'Correcte':'Incorrecte'} : ${q.title}`;
-    item.append(summary);
-    const answer=document.createElement('p'); answer.textContent=q.verified===true?`Réponse attendue : ${getExpectedAnswer(q)}`:'Corrigé non confirmé'; item.append(answer);
-    if(q.explanation){const why=document.createElement('p'); why.textContent=q.explanation;item.append(why);}
-    review.append(item);
+  const review = $('exam-review');
+  review.classList.remove('hidden');
+  review.replaceChildren();
+  const overview = document.createElement('div');
+  overview.className = 'review-overview';
+  const wrong = total - correct;
+  overview.innerHTML = `<div class="review-stat"><span>Bonnes réponses</span><strong>${correct}</strong></div><div class="review-stat review-stat-wrong"><span>Erreurs / omissions</span><strong>${wrong}</strong></div><div class="review-stat"><span>Réussite</span><strong>${Math.round(correct/total*100)} %</strong></div>`;
+  review.append(overview);
+  const toolbar = document.createElement('div');
+  toolbar.className = 'review-toolbar';
+  const heading = document.createElement('h2'); heading.textContent = 'Correction détaillée';
+  const filters = document.createElement('div'); filters.className = 'review-filters';
+  toolbar.append(heading, filters); review.append(toolbar);
+  const list = document.createElement('div'); list.className = 'review-list'; review.append(list);
+  const rows = [];
+  seq.forEach((q,i) => {
+    const a = answers[i];
+    const complete = !!a && isResponseComplete(q,a.response);
+    const ok = complete && checkResponse(q,a.response);
+    const item = document.createElement('details');
+    item.className = `review-card ${ok ? 'review-correct' : 'review-incorrect'}`;
+    const summary = document.createElement('summary');
+    const status = document.createElement('span');
+    status.className = 'review-status';
+    status.textContent = ok ? '✓ Correcte' : complete ? '✕ Incorrecte' : '✕ Sans réponse';
+    const label = document.createElement('span'); label.className = 'review-question';
+    label.textContent = `Question ${i+1} · Série ${q.examKey.split(':')[0]} · ${q.title}`;
+    const chevron = document.createElement('span'); chevron.className = 'review-chevron'; chevron.textContent = '⌄';
+    summary.append(status,label,chevron); item.append(summary);
+    const body = document.createElement('div'); body.className = 'review-body';
+    const userAnswer = document.createElement('p');
+    const responseText = complete ? formatExamResponse(q,a.response) : 'Aucune réponse complète';
+    const yourLabel = document.createElement('strong'); yourLabel.textContent = 'Ta réponse : ';
+    userAnswer.append(yourLabel, document.createTextNode(responseText));
+    const expected = document.createElement('p');
+    const expectedLabel = document.createElement('strong'); expectedLabel.textContent = 'Réponse attendue : ';
+    expected.append(expectedLabel,document.createTextNode(getExpectedAnswer(q)));
+    body.append(userAnswer,expected);
+    if (q.explanation) { const why=document.createElement('p'); const title=document.createElement('strong');title.textContent='Explication : ';why.append(title,document.createTextNode(q.explanation));body.append(why); }
+    item.append(body); list.append(item); rows.push({item,ok});
+  });
+  [['Toutes', 'all'], ['Incorrectes', 'wrong'], ['Correctes', 'right']].forEach(([label,filter])=>{
+    const button=document.createElement('button'); button.type='button';button.textContent=label;
+    button.className=filter==='all'?'review-filter active':'review-filter';
+    button.onclick=()=>{
+      filters.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+      button.classList.add('active');
+      rows.forEach(({item,ok})=>item.classList.toggle('hidden',filter==='wrong'?ok:filter==='right'?!ok:false));
+    };
+    filters.append(button);
   });
 }
 function quitQuiz() {
@@ -249,7 +295,7 @@ function normalizeText(value) {
 
 // Ignore la casse et les espaces dans les expressions DAX.
 function normalizeDax(value) {
-  return String(value ?? '').replace(/\s+/g, '').toUpperCase();
+  return String(value ?? '').replace(/\s+/g, '');
 }
 
 function makeTextInput(id, value = '', disabled = false) {
@@ -351,10 +397,10 @@ function start(mode = 'all') {
   let questions = [];
 
   if (mode === 'errors') {
-    questions = errors.slice();
+    questions = errors.filter(q => q.verified === true);
 
   } else if (mode === 'random') {
-    questions = Object.values(series).flat();
+    questions = Object.values(series).flat().filter(q => q.verified === true);
 
     for (let i = questions.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -365,7 +411,7 @@ function start(mode = 'all') {
     }
 
   } else {
-    questions = series[serieActive].slice();
+    questions = series[serieActive].filter(q => q.verified === true);
   }
 
   if (!questions.length) {
@@ -411,13 +457,7 @@ function renderNavigation() {
     if (examMode) {
       button.classList.add(state && isResponseComplete(q,state.response) ? 'exam-answered' : 'unanswered');
     } else if (state) {
-      if (q.verified !== true) {
-        button.classList.add('unanswered');
-      } else {
-        button.classList.add(
-          state.correct ? 'correct' : 'incorrect'
-        );
-      }
+      button.classList.add(state.correct ? 'correct' : 'incorrect');
     } else {
       button.classList.add('unanswered');
     }
@@ -502,10 +542,7 @@ function render() {
   $('check').classList.toggle('hidden', locked || examMode);
   $('next').classList.toggle('hidden', !examMode && !locked);
 
-  $('pending').classList.toggle(
-    'hidden',
-    examMode || q.verified === true
-  );
+
 
   $('opts').replaceChildren();
 

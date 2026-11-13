@@ -85,7 +85,7 @@ const serie04 = [
     "type": "single",
     "image": "images/serie04/Q05.png",
     "full": "images/serie04/Q05.png",
-    "verified": false
+    "verified": true
   },
   {
     "num": 6,
