@@ -85,7 +85,7 @@ const serie04 = [
     "type": "single",
     "image": "images/serie04/Q05.png",
     "full": "images/serie04/Q05.png",
-    "verified": false
+    "verified": true
   },
   {
     "num": 6,
@@ -143,7 +143,7 @@ const serie04 = [
       true,
       false
     ],
-    "explanation": "Les réponses sont reconstituées à partir des coches vertes et croix rouges de la capture. Les fonctions du Service peuvent varier selon la version.",
+    "explanation": "Les fonctions du Service peuvent varier selon la version.",
     "type": "tf",
     "image": "images/serie04/Q08.png",
     "full": "images/serie04/Q08.png",
@@ -162,6 +162,7 @@ const serie04 = [
     "Une colonne avec un résumé d'agrégation"
   ],
   answer: ["B", "E", "A", "C", "D"],
+  "explanation": "Ca ne nécessite pas d'explications",
   image: "images/serie04/Q09.png",
   full: "images/serie04/Q09.png",
   verified: true
