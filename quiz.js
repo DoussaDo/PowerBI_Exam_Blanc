@@ -10,7 +10,8 @@
 const series = {
   1: serie01,
   2: serie02,
-  3: serie03
+  3: serie03,
+  4: serie04
 };
 
 let serieActive = 1;
