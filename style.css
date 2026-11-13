@@ -391,3 +391,19 @@ header .home-link,
 header .home-link * {
     cursor: pointer !important;
 }
+/* SIMULATION EXAMEN */
+.exam-entry {margin-top:28px;padding:23px;border:1px solid #d4dce8;border-radius:15px;background:linear-gradient(120deg,#fffdf3,#f3f6fb);display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.exam-entry h2 {font-size:21px;margin:4px 0}
+.exam-entry p {margin:3px 0;color:#64748b}
+.exam-kicker {font-size:11px;font-weight:800;letter-spacing:1.2px;color:#896b00}
+.exam-clock {margin:15px 0 24px;padding:15px;border:1px solid #e2e8f0;border-radius:12px;background:#fafcff}
+.exam-clock-top {display:flex;justify-content:space-between;margin-bottom:9px}
+#exam-time {font-size:22px;font-variant-numeric:tabular-nums}
+.exam-track {height:13px;background:#e2e8f0;border-radius:20px;overflow:hidden}
+.exam-timebar {height:100%;width:100%;background:#e4b90a;transition:width .25s linear,background .25s linear}
+.exam-timebar.urgent {background:#dc2626}
+.nav-question.exam-answered {background:#eaf3ff;border-color:#9cc3fa}
+.exam-review {margin-top:25px}
+.exam-review-item {padding:11px 0;border-bottom:1px solid #e2e8f0}
+.exam-review-item summary {cursor:pointer;font-weight:600}
+.exam-review-item p {padding-left:15px}

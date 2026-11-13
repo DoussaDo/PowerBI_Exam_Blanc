@@ -40,6 +40,170 @@ let locked = false;
 // null = non validée
 // { response, correct } = validée
 let answers = [];
+let examMode = false;
+let examDeadline = 0;
+let examTimer = null;
+const EXAM_DURATION = 60 * 60 * 1000;
+const EXAM_STORAGE_KEY = 'powerbi-exam-v1';
+function shuffleQuestions(questions) {
+  for (let i = questions.length - 1; i > 0; i--) {
+    const n = Math.floor(Math.random() * (i + 1));
+    [questions[i], questions[n]] = [questions[n], questions[i]];
+  }
+  return questions;
+}
+function getExamPool() {
+  return Object.entries(series).flatMap(([seriesId, questions]) =>
+    questions.map(q => ({...q, examKey: `${seriesId}:${q.num}`})));
+}
+function startExam() {
+  const pool = getExamPool();
+  if (pool.length < 35) { alert(`35 questions nécessaires. Seulement ${pool.length} disponibles.`); return; }
+  if (examMode && !confirm('Abandonner la simulation en cours ?')) return;
+  stopExamTimer();
+  examMode = true;
+  seq = shuffleQuestions(pool).slice(0, 35);
+  answers = Array(seq.length).fill(null);
+  idx = 0; good = 0; errors = []; locked = false;
+  examDeadline = Date.now() + EXAM_DURATION;
+  persistExam();
+  updateExamUI();
+  render(); view('quiz');
+  examTimer = setInterval(tickExam, 250);
+}
+function persistExam() {
+  if (!examMode) return;
+  try { localStorage.setItem(EXAM_STORAGE_KEY, JSON.stringify({
+    keys: seq.map(q => q.examKey), answers, idx, examDeadline
+  })); } catch (e) { console.warn('Sauvegarde impossible', e); }
+}
+function stopExamTimer() { if (examTimer !== null) clearInterval(examTimer); examTimer = null; }
+function tickExam() {
+  if (!examMode) return;
+  const left = Math.max(0, examDeadline - Date.now());
+  const seconds = Math.ceil(left / 1000);
+  $('exam-time').textContent = `${String(Math.floor(seconds / 60)).padStart(2,'0')}:${String(seconds % 60).padStart(2,'0')}`;
+  $('exam-timebar').style.width = `${left / EXAM_DURATION * 100}%`;
+  $('exam-timebar').classList.toggle('urgent', left <= 10 * 60 * 1000);
+  if (left <= 0) finishExam(true);
+}
+function updateExamUI() {
+  $('exam-clock').classList.toggle('hidden', !examMode);
+  $('exam-submit').classList.toggle('hidden', !examMode);
+  $('check').classList.toggle('hidden', examMode);
+  $('pending').classList.add('hidden');
+  if (examMode) tickExam();
+}
+function readResponse(q, requireComplete = true) {
+  let response;
+  if (q.type === 'tf') {
+    const vals = q.options.map((_,i) => document.querySelector(`input[name="tf${i}"]:checked`)?.value);
+    if (requireComplete && vals.some(v => v === undefined)) return {valid:false};
+    response = vals.map(v => v === undefined ? null : v === 'true');
+  } else if (q.type === 'multiple') {
+    response = Array.from(document.querySelectorAll('input[name="multiple"]:checked')).map(e=>Number(e.value));
+    if (requireComplete && !response.length) return {valid:false};
+  } else if (q.type === 'matching_text') {
+    response = q.options.map((_,i) => $(`match-${i}`).value.trim().toUpperCase());
+    if (requireComplete && response.some(v=> !/^[A-E]$/.test(v))) return {valid:false};
+  } else if (q.type === 'dropdown') {
+    response = q.dropdowns.map((_,i) => $(`dropdown-${i}`).value);
+    if (requireComplete && response.some(v=>!v)) return {valid:false};
+  } else if (q.type === 'text') {
+    response = $('text-answer').value.trim();
+    if (requireComplete && !response) return {valid:false};
+  } else {
+    const selected = document.querySelector('input[name="choice"]:checked');
+    response = selected ? Number(selected.value) : null;
+    if (requireComplete && response === null) return {valid:false};
+  }
+  return {valid:true,response};
+}
+function isResponseComplete(q, response) {
+  if (response === null || response === undefined) return false;
+  if (q.type === 'tf') return response.every(v => v !== null);
+  if (q.type === 'multiple') return response.length > 0;
+  if (q.type === 'matching_text') return response.every(v => /^[A-E]$/.test(v));
+  if (q.type === 'dropdown') return response.every(Boolean);
+  if (q.type === 'text') return Boolean(response.trim());
+  return response !== null;
+}
+function checkResponse(q, response) {
+  if (!isResponseComplete(q,response)) return false;
+  if (q.type === 'tf' || q.type === 'matching_text' || q.type === 'dropdown')
+    return response.every((v,i) => v === q.answer[i]);
+  if (q.type === 'multiple') return response.length === q.answer.length && response.every(v=>q.answer.includes(v));
+  if (q.type === 'text') return (Array.isArray(q.answer)?q.answer:[q.answer]).some(a=>normalizeDax(response)===normalizeDax(a));
+  return response === q.answer;
+}
+function saveCurrentExamAnswer() {
+  if (!examMode || !seq.length) return;
+  const q = seq[idx];
+  const response = readResponse(q, false).response;
+  answers[idx] = isResponseComplete(q,response) ? {response,correct:null} :
+    (response === null || response === undefined ? null : {response,correct:null});
+  persistExam();
+}
+function finishExam(expired = false) {
+  if (!examMode) return;
+  if (!expired) {
+    saveCurrentExamAnswer();
+    const unanswered = answers.filter((a,i) => !a || !isResponseComplete(seq[i],a.response)).length;
+    if (!confirm(unanswered ? `Il reste ${unanswered} question(s) sans réponse complète. Terminer ?` : 'Terminer et afficher les résultats ?')) return;
+  } else saveCurrentExamAnswer();
+  stopExamTimer();
+  try { localStorage.removeItem(EXAM_STORAGE_KEY); } catch(e) {}
+  const total = seq.length;
+  const attempted = answers.filter((a,i)=>a && isResponseComplete(seq[i],a.response)).length;
+  const verified = seq.filter(q=>q.verified===true).length;
+  const correct = answers.reduce((sum,a,i)=>sum+(a && seq[i].verified===true && checkResponse(seq[i],a.response)?1:0),0);
+  errors = seq.filter((q,i)=>q.verified===true && (!answers[i] || !checkResponse(q,answers[i].response)));
+  examMode = false;
+  updateExamUI();
+  view('result');
+  $('resultTitle').textContent = expired ? 'Temps écoulé !' : 'Simulation terminée';
+  $('resultText').textContent = `Score : ${correct}/${verified} questions corrigées (${Math.round(correct/Math.max(1,verified)*100)} %). ${attempted}/${total} réponses complètes. ${total-verified} question(s) sans corrigé confirmé.`;
+  $('result-restart').textContent = 'Nouvelle simulation';
+  $('result-restart').onclick = startExam;
+  $('result-errors').classList.toggle('hidden',errors.length===0);
+  const review = $('exam-review'); review.classList.remove('hidden'); review.replaceChildren();
+  const heading=document.createElement('h3'); heading.textContent='Correction détaillée'; review.append(heading);
+  seq.forEach((q,i)=>{
+    const item=document.createElement('details'); item.className='exam-review-item';
+    const summary=document.createElement('summary');
+    const a=answers[i]; const complete=a && isResponseComplete(q,a.response);
+    const ok=complete && q.verified===true && checkResponse(q,a.response);
+    summary.textContent=`Question ${i+1} · Série ${q.examKey.split(':')[0]} · ${q.verified!==true?'Non corrigée':!complete?'Sans réponse':ok?'Correcte':'Incorrecte'} : ${q.title}`;
+    item.append(summary);
+    const answer=document.createElement('p'); answer.textContent=q.verified===true?`Réponse attendue : ${getExpectedAnswer(q)}`:'Corrigé non confirmé'; item.append(answer);
+    if(q.explanation){const why=document.createElement('p'); why.textContent=q.explanation;item.append(why);}
+    review.append(item);
+  });
+}
+function quitQuiz() {
+  if (examMode) {
+    if (!confirm('Quitter la simulation ? La session en cours sera abandonnée.')) return;
+    stopExamTimer(); examMode=false;
+    try {localStorage.removeItem(EXAM_STORAGE_KEY);}catch(e){}
+    updateExamUI();
+  }
+  view('intro');
+}
+function restoreExam() {
+  let saved; try {saved=JSON.parse(localStorage.getItem(EXAM_STORAGE_KEY));}catch(e){return;}
+  if(!saved || !Array.isArray(saved.keys) || saved.keys.length!==35) return;
+  const pool=new Map(getExamPool().map(q=>[q.examKey,q]));
+  if(!saved.keys.every(k=>pool.has(k))) return;
+  if(!confirm('Reprendre la simulation interrompue ? Le temps a continué à défiler.')) {
+    try {localStorage.removeItem(EXAM_STORAGE_KEY);}catch(e){} return;
+  }
+  examMode=true; seq=saved.keys.map(k=>pool.get(k)); answers=saved.answers;
+  idx=Math.min(Math.max(0,saved.idx||0),34); examDeadline=saved.examDeadline;
+  render(); view('quiz'); updateExamUI();
+  if(examMode) examTimer=setInterval(tickExam,250);
+}
+window.addEventListener('DOMContentLoaded',restoreExam);
+
 
 const $ = id => document.getElementById(id);
 
@@ -48,6 +212,7 @@ const $ = id => document.getElementById(id);
 // ========================================
 
 function view(id) {
+  if (examMode && id === 'intro') { quitQuiz(); return; }
   ['intro', 'quiz', 'result'].forEach(x => {
     $(x).classList.toggle('hidden', x !== id);
   });
@@ -177,6 +342,12 @@ function createOptionContent(option) {
 // ========================================
 
 function start(mode = 'all') {
+  if (examMode) { alert('Termine ou quitte la simulation avant de changer de mode.'); return; }
+  stopExamTimer();
+  $('exam-review').classList.add('hidden');
+  $('result-restart').textContent='Recommencer';
+  $('result-restart').onclick=()=>start('all');
+  $('result-errors').classList.remove('hidden');
   let questions = [];
 
   if (mode === 'errors') {
@@ -237,7 +408,9 @@ function renderNavigation() {
     button.type = 'button';
     button.className = 'nav-question';
 
-    if (state) {
+    if (examMode) {
+      button.classList.add(state && isResponseComplete(q,state.response) ? 'exam-answered' : 'unanswered');
+    } else if (state) {
       if (q.verified !== true) {
         button.classList.add('unanswered');
       } else {
@@ -256,7 +429,9 @@ function renderNavigation() {
 
     let icon = '○';
 
-    if (state && q.verified === true) {
+    if (examMode) {
+      icon = state && isResponseComplete(q,state.response) ? '●' : '○';
+    } else if (state && q.verified === true) {
       icon = state.correct ? '✓' : '✕';
     } else if (state) {
       icon = '•';
@@ -273,7 +448,9 @@ function renderNavigation() {
 function goToQuestion(index) {
   if (index < 0 || index >= seq.length) return;
 
+  if (examMode) saveCurrentExamAnswer();
   idx = index;
+  if (examMode) persistExam();
   render();
 
   // Revenir en haut de la question
@@ -291,15 +468,15 @@ function render() {
   const q = seq[idx];
   const state = answers[idx];
 
-  locked = state !== null;
+  locked = !examMode && state !== null;
 
   $('counter').textContent =
     `Question ${idx + 1}/${seq.length}`;
 
-  $('score').textContent = `${good} correcte(s)`;
+  $('score').textContent = examMode ? `${answers.filter((a,i)=>a && isResponseComplete(seq[i],a.response)).length} / ${seq.length} réponses` : `${good} correcte(s)`;
 
   // Progression basée sur les questions validées
-  const completed = answers.filter(a => a !== null).length;
+  const completed = examMode ? answers.filter((a,i)=>a && isResponseComplete(seq[i],a.response)).length : answers.filter(a => a !== null).length;
 
   $('bar').style.width =
     `${completed / seq.length * 100}%`;
@@ -322,12 +499,12 @@ function render() {
 
   $('feedback').className = 'feedback hidden';
 
-  $('check').classList.toggle('hidden', locked);
-  $('next').classList.toggle('hidden', !locked);
+  $('check').classList.toggle('hidden', locked || examMode);
+  $('next').classList.toggle('hidden', !examMode && !locked);
 
   $('pending').classList.toggle(
     'hidden',
-    q.verified === true
+    examMode || q.verified === true
   );
 
   $('opts').replaceChildren();
@@ -345,7 +522,7 @@ function render() {
       line.className = 'fill-row';
       const text = document.createElement('span');
       text.textContent = role;
-      const input = makeTextInput(`match-${i}`, state?.response?.[i] ?? '', !!state);
+      const input = makeTextInput(`match-${i}`, state?.response?.[i] ?? '', !examMode && !!state);
       input.maxLength = 1;
       input.placeholder = 'A–E';
       input.setAttribute('aria-label', role);
@@ -375,7 +552,7 @@ function render() {
           select.append(option);
         });
         select.value = state?.response?.[n] ?? '';
-        select.disabled = !!state;
+        select.disabled = !examMode && !!state;
         sentence.append(select);
       }
     });
@@ -386,7 +563,7 @@ function render() {
       formula.className = 'fill-formula';
       const segments = q.formula.split('_____');
       formula.append(document.createTextNode(segments[0]));
-      const input = makeTextInput('text-answer', state?.response ?? '', !!state);
+      const input = makeTextInput('text-answer', state?.response ?? '', !examMode && !!state);
       input.placeholder = 'Fonction DAX';
       input.setAttribute('aria-label', 'Fonction DAX manquante');
       formula.append(input, document.createTextNode(segments.slice(1).join('_____')));
@@ -399,7 +576,7 @@ function render() {
         prefix.textContent = q.prefix;
         line.append(prefix);
       }
-      const input = makeTextInput('text-answer', state?.response ?? '', !!state);
+      const input = makeTextInput('text-answer', state?.response ?? '', !examMode && !!state);
       input.placeholder = 'Saisis ta formule DAX';
       line.append(input);
       $('opts').append(line);
@@ -424,7 +601,7 @@ function render() {
           if (state) {
             input.checked =
               state.response[i] === (val === 'true');
-            input.disabled = true;
+            input.disabled = !examMode;
           }
 
           label.append(
@@ -463,7 +640,7 @@ function render() {
               ? state.response.includes(i)
               : state.response === i;
 
-          input.disabled = true;
+          input.disabled = !examMode;
         }
 
         label.append(
@@ -476,16 +653,18 @@ function render() {
     });
   }
 
-  if (state) {
+  if (state && !examMode) {
     showFeedback(q, state.correct);
   }
 
+  if (examMode) { $('next').classList.remove('hidden'); $('next').disabled = idx === seq.length - 1; }
   $('next').textContent =
     idx === seq.length - 1
       ? 'Voir mon résultat'
       : 'Question suivante →';
 
   renderNavigation();
+  updateExamUI();
 }
 
 // ========================================
@@ -576,6 +755,7 @@ function showFeedback(q, ok) {
 // ========================================
 
 function validate() {
+  if (examMode) return;
   if (locked || answers[idx] !== null) return;
 
   const q = seq[idx];
@@ -690,6 +870,7 @@ function validate() {
 // ========================================
 
 function next() {
+  if (examMode) { goToQuestion(Math.min(idx+1,seq.length-1)); return; }
   if (idx === seq.length - 1) {
     showResults();
   } else {
@@ -757,3 +938,7 @@ function toggleNavigation() {
 }
 
 
+
+// En simulation, mémoriser les saisies sans afficher les corrections.
+document.addEventListener('input', e => {if(examMode && $('quiz').contains(e.target)) {saveCurrentExamAnswer();renderNavigation();}});
+document.addEventListener('change', e => {if(examMode && $('quiz').contains(e.target)) {saveCurrentExamAnswer();renderNavigation();}});

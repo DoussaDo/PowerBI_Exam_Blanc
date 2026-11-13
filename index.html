@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Power BI Drill · 25 questions</title>
+    <title>Power BI Drill · Préparation TOSA</title>
     <link rel="stylesheet" href="style.css">
 <style>
 
@@ -41,7 +41,11 @@
             <button onclick="choisirSerie(4)">Série 4 - Débutant</button>
             <button onclick="start('random')">🔀 Mélanger les séries</button>
             </div>
-           
+            <div class="exam-entry">
+              <div><span class="exam-kicker">MODE CHRONOMÉTRÉ</span><h2>SIMULATION EXAMEN</h2>
+              <p>35 questions aléatoires · 60 minutes · correction à la fin.</p></div>
+              <button onclick="startExam()">Commencer l’examen blanc</button>
+            </div>
         </section>
         
 <section class="quiz-layout hidden" id="quiz">
@@ -58,6 +62,10 @@
             <div class="bar" id="bar"></div>
         </div>
 
+        <div id="exam-clock" class="exam-clock hidden" role="timer" aria-label="Temps restant">
+          <div class="exam-clock-top"><strong>Temps restant</strong><strong id="exam-time">60:00</strong></div>
+          <div class="exam-track"><div id="exam-timebar" class="exam-timebar"></div></div>
+        </div>
         <h1 id="title"></h1>
 
         <div class="visual">
@@ -87,37 +95,27 @@
                 Question suivante →
             </button>
 
-            <button class="alt" onclick="view('intro')">
+            <button id="exam-submit" class="hidden" onclick="finishExam(false)">Terminer l’examen</button>
+            <button class="alt" onclick="quitQuiz()">
                 Quitter
             </button>
         </div>
 
     </div>
 <aside class="panel quiz-sidebar">
-    <button id="toggle-nav" type="button" onclick="toggleNavigation()">
-        Masquer la navigation ❯
-    </button>
-    <!-- Colonne de droite : navigation -->
-    <aside class="panel quiz-sidebar">
-
-        <h3>Navigation</h3>
-
-        <p class="muted small">
-            Accéder directement à une question
-        </p>
-
-        <div id="question-nav"></div>
-
-
-    </aside>
-
+    <button id="toggle-nav" type="button" onclick="toggleNavigation()">Masquer la navigation ❯</button>
+    <h3>Navigation</h3>
+    <p class="muted small">Accéder directement à une question</p>
+    <div id="question-nav"></div>
+</aside>
 </section>
 
         <section class="panel hidden" id="result">
             <h1 id="resultTitle"></h1>
             <p id="resultText"></p>
-            <div class="actions"><button onclick="start('all')">Recommencer</button><button class="alt"
-                    onclick="start('errors')">Réviser mes erreurs</button></div>
+            <div id="exam-review" class="exam-review hidden"></div>
+            <div class="actions"><button id="result-restart" onclick="start('all')">Recommencer</button><button class="alt"
+                    onclick="start('errors')" id="result-errors">Réviser mes erreurs</button><button class="alt" onclick="view('intro')">Accueil</button></div>
         </section>
     </main>
     <dialog id="zoom"><button onclick="$('zoom').close()">Fermer ✕</button><img id="fullimage"
