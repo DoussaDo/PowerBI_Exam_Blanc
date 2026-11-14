@@ -88,7 +88,7 @@ const serie05 = [
       2,
       3
     ],
-    "explanation": "La correction de la capture marque les propositions 2 et 4 comme bonnes réponses non choisies, et la proposition 3 comme bonne réponse choisie.",
+    "explanation": "Le type de données des colonnes Ref transaction et Ref article est correct. Les colonnes inutiles doivent être supprimées et les lignes filtrées pour ne conserver que celles pertinentes.",
     "image": "images/serie05/Q05.png",
     "full": "images/serie05/Q05.png",
     "verified": true
