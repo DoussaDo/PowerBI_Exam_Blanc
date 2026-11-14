@@ -278,8 +278,8 @@ const serie02 = [
     "Une colonne avec un résumé d'agrégation"
   ],
   answer: ["B", "E", "A", "C", "D"],
-  image: "images/serie04/Q14.png",
-  full: "images/serie04/Q14.png",
+  image: "images/serie02/Q14.png",
+  full: "images/serie02/Q14.png",
   verified: true
   },
 
