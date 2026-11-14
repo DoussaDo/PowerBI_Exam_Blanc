@@ -417,7 +417,7 @@ const serie03 = [
       "SUM",
       "DISTINCTCOUNT"
     ],
-    "answer": 0,
+    "answer": 1,
     "explanation": "COUNT([NB ABSENCES], COLLABORATEURS[SERVICE] = \"PRODUCTION\") compte les valeurs de la colonne NB ABSENCES pour lesquelles le service est PRODUCTION.",
     "type": "single",
     "image": "images/serie03/Q22.png",
